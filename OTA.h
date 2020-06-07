@@ -13,14 +13,6 @@
 const char* ssid = mySSID;
 const char* password = myPASSWORD;
 
-#if defined(ESP32_RTOS) && defined(ESP32)
-void taskOne( void * parameter )
-{
-  ArduinoOTA.handle();
-  delay(3500);
-}
-#endif
-
 void setupOTA(const char* nameprefix) {
   const int maxlen = 40;
   char fullhostname[maxlen];
@@ -78,14 +70,4 @@ void setupOTA(const char* nameprefix) {
   Serial.println("OTA Initialized");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-
-#if defined(ESP32_RTOS) && defined(ESP32)
-  xTaskCreate(
-    ota_handle,          /* Task function. */
-    "OTA_HANDLE",        /* String with name of task. */
-    10000,            /* Stack size in bytes. */
-    NULL,             /* Parameter passed as input of the task */
-    1,                /* Priority of the task. */
-    NULL);            /* Task handle. */
-#endif
 }
