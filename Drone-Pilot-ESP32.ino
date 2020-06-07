@@ -1,37 +1,53 @@
 #include "OTA.h"
-#include "src/test/test.h"
+#include <TelnetStream.h>
 
 // #define ESP32_RTOS  // Uncomment this line if you want to use the code with freertos (only works on the ESP32)
 
 unsigned long entry;
 char buffer[100];
+bool OTAMode = false;
 
+int button_pin = 27;
+bool led = false;
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Booting");
-  setupOTA("ESP32_0");
-  pinMode(LED_BUILTIN,OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+  pinMode(button_pin, INPUT_PULLUP);
+  pinMode(2,OUTPUT);
+  digitalWrite(2, HIGH);
 }
 
 void loop() {
-  entry=micros();
+  digitalWrite(2, !digitalRead(2));
   
-  #ifndef ESP32_RTOS
-  ArduinoOTA.handle();
-  #endif
-  int i=0;
-  while(TelnetStream.available()){
-    buffer[i] = TelnetStream.read();
-    i++;
+  if(!digitalRead(button_pin) and ! OTAMode){
+    // setup OTA
+    Serial.begin(115200);
+    Serial.println("Enabling OTA");
+    setupOTA("ESP32_0");
+    TelnetStream.begin();
+    OTAMode = true;
   }
-  buffer[i] = '\0';
 
-  TelnetStream.print("Loop time : ");
-  TelnetStream.println(micros()-entry);
-  TelnetStream.print("received : ");
-  TelnetStream.println(buffer);
+  if(OTAMode){
+    ArduinoOTA.handle();
 
-  test::init();
-  delay(1000);
+    entry=micros();
+    int i=0;
+    while(TelnetStream.available()){
+      buffer[i] = TelnetStream.read();
+      i++;
+    }
+    buffer[i] = '\0';
+
+    TelnetStream.print("Loop time : ");
+    TelnetStream.println(micros()-entry);
+    TelnetStream.print("received : ");
+    TelnetStream.println(buffer);
+    delay(1000);
+  }
+  else{
+    
+    delay(100);
+    
+  }
+
 }

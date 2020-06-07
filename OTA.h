@@ -8,7 +8,6 @@
 
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include <TelnetStream.h>
 #include "credentials.h"
 
 const char* ssid = mySSID;
@@ -75,7 +74,6 @@ void setupOTA(const char* nameprefix) {
   });
 
   ArduinoOTA.begin();
-  TelnetStream.begin();
 
   Serial.println("OTA Initialized");
   Serial.print("IP address: ");
