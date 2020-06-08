@@ -1,44 +1,57 @@
+
+
 #include "OTA.h"
 #include <TelnetStream.h>
-// #include "task0.ino"
-// #include "task1.ino"
+#include <SPI.h>
 
-
-static TaskHandle_t task1_handle;
-static TaskHandle_t task2_handle = NULL;
+extern TaskHandle_t loopTaskHandle;
+TaskHandle_t task0_handle = NULL;
 
 unsigned long entry;
+unsigned long exit1;
 char buffer[100];
-bool OTAMode = false;
+bool RunMode = true;
 
 int button_pin = 27;
 bool led = false;
 
+bool task0_running = true;
+
 
 void setup() {
+
+  WiFi.mode(WIFI_OFF);
+  btStop();
+  Serial.begin(115200);
+  
   pinMode(button_pin, INPUT_PULLUP);
   pinMode(2,OUTPUT);
   digitalWrite(2, HIGH);
 
-  xTaskCreatePinnedToCore(run_task0, "Task0", 2048, NULL, 1, &task1_handle, 0);
-  xTaskCreatePinnedToCore(run_task1, "Task1", 2048, NULL, 1, &task2_handle, 1);
-
-
+  // fast task launched on core 0
+  xTaskCreatePinnedToCore(run_task0, "Task0", 8192, NULL, 1, &task0_handle, 0);
+  entry=micros();
 }
 
 void loop() {
-  digitalWrite(2, !digitalRead(2));
-  
-  if(!digitalRead(button_pin) and ! OTAMode){
-    // setup OTA
-    Serial.begin(115200);
-    Serial.println("Enabling OTA");
-    setupOTA("ESP32_0");
+  // this runs on core 1, 
+
+
+  if(!digitalRead(button_pin) and RunMode){
+    // switch to OTA mode, stop all processes and wait for update. 
+    task0_running = false;
+    setupOTA("Drone_Pilot");
     TelnetStream.begin();
-    OTAMode = true;
+    TelnetStream.println("Enabling OTA");
+    RunMode = false;
   }
 
-  if(OTAMode){
+  if(RunMode){
+    run_task1();
+  }
+  else{
+    digitalWrite(2, !digitalRead(2));
+
     ArduinoOTA.handle();
 
     entry=micros();
@@ -49,19 +62,10 @@ void loop() {
     }
     buffer[i] = '\0';
 
-    TelnetStream.print("on core : ");
-    TelnetStream.println(xPortGetCoreID());
-
     TelnetStream.print("Loop time : ");
     TelnetStream.println(micros()-entry);
     TelnetStream.print("received : ");
     TelnetStream.println(buffer);
     delay(1000);
   }
-  else{
-    
-    delay(100);
-    
-  }
-
 }

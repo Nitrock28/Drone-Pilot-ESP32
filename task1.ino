@@ -1,7 +1,8 @@
+#include <Arduino.h>
 
-void run_task1(void *pvParameters)
+void run_task1()
 {
-  for (;;) {
-    delay(1000);
-  }
+  
+  delay(100);
+
 }
