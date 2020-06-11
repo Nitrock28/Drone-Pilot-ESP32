@@ -1,0 +1,18 @@
+
+The standard setup() will launch one task on each core, then terminate. loop()
+function is not used.
+
+On Core 0 : 
+    -all esp32 basic tasks are on this Core, fast user task may be slowed down
+    -Run Serial for GPS (1Hz)
+    -Run all waypoint navigation scrips
+    -handle OTA/EERPOM configuration through Telnet after button press.
+
+
+On Core 1:
+Nothing runs on this core except the user task
+One loop with a target of 200Hz, 
+    -SPI communication to IMU, barometer and SD card.
+    -Receiver bus communication
+    -Control algorithm (PIFF)
+    -Servo outputs.
