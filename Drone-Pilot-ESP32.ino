@@ -1,71 +1,42 @@
+#include <Arduino.h>
+#include <WiFi.h>
+
+#define DEBUG_SERIAL
 
 
-#include "OTA.h"
-#include <TelnetStream.h>
-#include <SPI.h>
-
-extern TaskHandle_t loopTaskHandle;
+// tasks handles
 TaskHandle_t task0_handle = NULL;
+TaskHandle_t task1_handle;
 
-unsigned long entry;
-unsigned long exit1;
-char buffer[100];
-bool RunMode = true;
 
-int button_pin = 27;
-bool led = false;
-
+// variables accessible in the two task loops
 bool task0_running = true;
+
+
+
+
 
 
 void setup() {
 
   WiFi.mode(WIFI_OFF);
   btStop();
+
+#ifdef DEBUG_SERIAL
   Serial.begin(115200);
+#endif
   
-  pinMode(button_pin, INPUT_PULLUP);
-  pinMode(2,OUTPUT);
+  pinMode(2,OUTPUT);// led
   digitalWrite(2, HIGH);
 
-  // fast task launched on core 0
+  // one loop task on each core.
   xTaskCreatePinnedToCore(run_task0, "Task0", 8192, NULL, 1, &task0_handle, 0);
-  entry=micros();
+  xTaskCreatePinnedToCore(run_task1, "Task1", 8192, NULL, 1, &task1_handle, 1);
+  vTaskDelete( NULL );
 }
 
 void loop() {
-  // this runs on core 1, 
-
-
-  if(!digitalRead(button_pin) and RunMode){
-    // switch to OTA mode, stop all processes and wait for update. 
-    task0_running = false;
-    setupOTA("Drone_Pilot");
-    TelnetStream.begin();
-    TelnetStream.println("Enabling OTA");
-    RunMode = false;
-  }
-
-  if(RunMode){
-    run_task1();
-  }
-  else{
-    digitalWrite(2, !digitalRead(2));
-
-    ArduinoOTA.handle();
-
-    entry=micros();
-    int i=0;
-    while(TelnetStream.available()){
-      buffer[i] = TelnetStream.read();
-      i++;
-    }
-    buffer[i] = '\0';
-
-    TelnetStream.print("Loop time : ");
-    TelnetStream.println(micros()-entry);
-    TelnetStream.print("received : ");
-    TelnetStream.println(buffer);
-    delay(1000);
-  }
+#ifdef DEBUG_SERIAL
+  Serial.println("inLoop");
+#endif
 }
