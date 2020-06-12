@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <WiFi.h>
 
 #define DEBUG_SERIAL
 
@@ -13,19 +12,17 @@ TaskHandle_t task1_handle;
 bool task0_running = true;
 
 
-
+template <typename T>
+Print& operator<<(Print& printer, T value)
+{
+    printer.print(value);
+    return printer;
+}
 
 
 
 void setup() {
-
-  WiFi.mode(WIFI_OFF);
   btStop();
-
-#ifdef DEBUG_SERIAL
-  Serial.begin(115200);
-#endif
-  
   pinMode(2,OUTPUT);// led
   digitalWrite(2, HIGH);
 
